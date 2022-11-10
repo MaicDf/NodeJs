@@ -4,6 +4,9 @@
  * Module dependencies.
  */
 
+/*
+Here we set up the server http, the port..etc 
+ */
 var app = require('../app');
 var debug = require('debug')('confusionserver:server');
 var http = require('http');
