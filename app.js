@@ -6,14 +6,28 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+//Endpoints, Http handling requests through this Routers
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-
 var dishRouter = require('./routes/dishRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var promotionRouter = require('./routes/promotionRouter');
 
+//Conecting to the data base
+const mongoose = require('mongoose'); 
+const Dishes = require('./models/dishes'); //model exported
 
+const url = 'mongodb://localhost:27017/conFusion';
+const connect = mongoose.connect(url);
+
+connect.then(()=>{
+  console.log('Connected correctly to server')
+}).catch(err=>{
+  console.log("General error in moongose module: ",err);
+});
+
+
+//Express
 var app = express();
 
 // view engine setup
@@ -26,8 +40,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+//Handling the http requests  with the specific modules
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/users', usersRouter); //Ex: Requests to the endpoint /users will be handle by usersRouter express module
 app.use('/dishes', dishRouter);
 app.use('/promotions',promotionRouter );
 app.use('/leaders', leaderRouter);
