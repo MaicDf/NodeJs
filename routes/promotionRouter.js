@@ -1,54 +1,91 @@
-const express = require ('express');
-const bodyParser =require ('body-parser');
+const express = require('express');
+const bodyParser = require('body-parser');
 
 //##DECLARING ROUTER
-const pRouter = express.Router(); 
+//conecting to mongoose
+const mongoose = require('mongoose');
+const Promotions = require('../models/promotions'); //importing the model
+
+const pRouter = express.Router();
 
 pRouter.use(bodyParser.json());
 
 //##takes end point as a paramaeter
 pRouter.route('/') //here the path put in index is extended 
-//##Selecting the endpoint##
-.all((req,res,next)=>{ //app.all => all verbs
-    //callback function
-        res.statusCode = 200;
-        res.setHeader('Content-Type','text/plain');
-        next();//=>Will continue on to look for additional specification >app.get,app.post...etc
+    //##Selecting the endpoint##
+    .get((req, res, next) => {
+        Promotions.find({})
+            .then((promotions) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(promotions);//send this back to the client.
+            }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
+            .catch((err) => next(err)); //pass the error to the overall error handler.
+        //end of the response
     })
-//Just for get request, this will be executed right after app.all (modified >res<) when there is a get request.
-.get((req,res,next)=>{
-    res.end('Will send all the promotions to you!');
-    //end of the response
-})
-.post((req,res,next)=>{
-    res.end('will add the promotion: '+ req.body.name + 'with details: '+req.body.description); 
-})
-.put((req,res,next)=>{
-    res.statusCode=403;
-    res.end('PUT operation not supported on /promotions'); 
-})
-.delete((req,res,next)=>{
-    res.end('Deleting all the promotions to you!');
-    //dangerous operation, must be for priviliged users
-}); //all of them are chained together
-
+    .post((req, res, next) => {
+        Promotions.create(req.body).
+            then((promotion) => {
+                console.log("promotion Created ", promotion);
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(promotion); //send this back to the client.
+            }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
+            .catch((err) => next(err)); //pass the error to the overall error handler.);
+    })
+    .put((req, res, next) => {
+        res.statusCode = 403;
+        res.end('PUT operation not supported on /promotions');
+    })
+    .delete((req, res, next) => {
+        Promotions.collection.drop()
+            .then((resp) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(resp);
+            }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
+            .catch((err) => next(err));  //pass the error to the overall error handler.);)
+        //dangerous operation, must be for priviliged users
+    }); //all of them are chained together
 
 //###PARAMETERS, retrvieng for the param
 pRouter.route('/:promotionId') //here the path put in index is extended 
-.get((req,res,next)=>{
-    res.end('Will send details of the promotion! '+ req.params.promotionId+ ' to you');
-    //end of the response
-})
-.post((req,res,next)=>{
-    res.statusCode=403;
-    res.end('post operation not supported on /promotions/:promotionId-> '+ req.params.promotionId); 
-})
-.put((req,res,next)=>{
-    res.write('Updating the dish: ' + req.params.promotionId+'\n');
-    res.end('Will update the dish: '+req.body.name+' with details '+ req.body.description); 
-})
-.delete((req,res,next)=>{
-    res.end('Deleting dish!: ' + req.params.promotionId);
-    //dangerous operation, must be for priviliged users
-});  
+    .get((req, res, next) => {
+        Promotions.findById(req.params.promotionId)
+            .then((promotion) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(promotion);//send this back to the client.
+            }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
+            .catch((err) => next(err)); //pass the error to the overall error handler.
+        //end of the response
+    })
+    .post((req, res, next) => {
+        res.statusCode = 403;
+        res.end('post operation not supported on /promotions/:promotionId-> ' + req.params.promotionId);
+    })
+
+    /* Note that update(), updateMany(), findOneAndUpdate(), etc. do not execute save() middleware. If you need save middleware and full validation,
+     first query for the document and then save() it. */
+    .put((req, res, next) => {
+        Promotions.findByIdAndUpdate(req.params.promotionId, {
+            $set: req.body
+        }, { new: true })
+            .then((promotion) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(promotion);//send this back to the client.
+            }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
+            .catch((err) => next(err)); //pass the error to the overall error handler.
+    })
+    .delete((req, res, next) => {
+        Promotions.findByIdAndRemove(req.params.promotionId)
+            .then((resp) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(resp);
+            }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
+            .catch((err) => next(err));
+    });
+
 module.exports = pRouter;

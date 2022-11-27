@@ -5,28 +5,8 @@ const Schema = mongoose.Schema; //with mongoose we do have to initialize our ser
 require('mongoose-currency').loadType(mongoose);
 const Currency=mongoose.Types.Currency;
 
-//SUB DOCUMENT comment Schema
-const commentSchema = new Schema({
-    rating: {
-        type: Number,
-        min: 1,
-        max: 5,
-        required: true
-    },
-    comment: {
-        type: String,
-        required: true
-    },
-    author: {
-        type: String,
-        required: true
-    }
-}, { //aditional properties
-    timestamps: true /* Creates the time stamps in all the documents "created at" and "updated at" */
-});
-
-
-const dishSchema = new Schema({
+//DOCUMENT Schema, promotion schema becomes the collection
+const promotionSchema = new Schema({
     name: {
         type: String,
         required: true,
@@ -37,10 +17,6 @@ const dishSchema = new Schema({
         required: true
     },
     image: {
-        type: String,
-        required: true
-    },
-    category: {
         type: String,
         required: true
     },
@@ -55,18 +31,12 @@ const dishSchema = new Schema({
     },
     featured: {
         type: Boolean,
-        default:false      
-    },
-    comments: [commentSchema] /* Array of subdocuments inside a document */
+        default:false 
+    }     
 }, { //aditional properties
     timestamps: true /* Creates the time stamps in all the documents "created at" and "updated at" */
-
-
 });
 
-//creating the model given the Schema
-/*here is where the colection 'dishes' is created, automatically 
-from 'Dish' with a plural*/
-var Dishes = mongoose.model('Dish', dishSchema);
+var Promotions = mongoose.model('Promotion', promotionSchema);
 
-module.exports = Dishes;
+module.exports = Promotions;
