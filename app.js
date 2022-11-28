@@ -5,8 +5,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var session= require('express-session');
-var fileStore = require ('session-file-store')(session); 
+var session = require('express-session');
+var fileStore = require('session-file-store')(session);
 
 //Endpoints, Http handling requests through this Routers
 var indexRouter = require('./routes/index');
@@ -51,67 +51,41 @@ app.use(session({ //setting up a session
   name: 'session-id',
   secret: '12345-67890-09876-54321',
   saveUninitialized: false,
-  resave:false,
+  resave: false,
   store: new fileStore()
 }));
 
 //here we should do authentication here, before the requests 
-function auth(req, res, next) { //i assume app.use always passes these 3 parameters to the functions.
+//only can access to these two before the authentication
+app.use('/', indexRouter);
+app.use('/users', usersRouter); //Ex: Requests to the endpoint /users will be handle by usersRouter express module
+
+
+function auth(req, res, next) {
   console.log(req.session);
-  if (!req.session.user) { //si no hay cookies o  session, pedir datos
 
-    var authHeader = req.headers.authorization;
-    if (!authHeader) { //null?
-      var err = new Error('You are not authenticated');
-      res.setHeader('WWW-Authenticate', 'Basic');//THIS SENDS BACK THE CHALLENGE
-      err.status = 401;
-      next(err);
-    } else {
-      try {
-        var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':'); //authHeader.splt separa el string en el espacio y otro para separar contraseña y usuario
-        //Buffer objects are used to represent a fixed-length sequence of bytes. 
-
-        /*los buffers son espacios de almacenamiento de manera temporal, memoria intermedia,hardware o software
-         Evitar degradar el tiempo de procesamiento de información, la info se va poniendo en una cola */
-
-        var username = auth[0];
-        var password = auth[1];
-      }
-      catch (err) { //err is just an identifier to hold the caught exception
-        console.log("i Entered to this error11")
-      }
-
-      //default user
-      if (username === 'admin' && password === 'password')/* The strict equality (===) operator checks whether its two operands are equal, returning a Boolean result. Unlike the equality operator, the strict equality operator always considers operands of different types to be different. */ {
-        
-        //res.cookie('user','admin',{signed:true}); ///name of the cookie, value, cookie options
-        req.session.user='admin';
-        next(); //next middleware
-      } else {
-        var err = new Error('You are not authenticated');//Error is a NodeJS Object
-        res.setHeader('WWW-Authenticate', 'Basic');
-        err.status = 401;
-        next(err);
-      }
-    }
-  }else{
-    if(req.session.user=='admin'){ //si ya hay cookies o una express session
+  if (!req.session.user) {
+    var err = new Error('You are not authenticated!');
+    err.status = 403;
+    return next(err);
+  }
+  else {
+    if (req.session.user === 'authenticated') {
       next();
-    }else{
-      var err = new Error('You are not authenticated');//Error is a NodeJS Object
-      err.status = 401;
-      next(err); 
+    }
+    else {
+      var err = new Error('You are not authenticated!');
+      err.status = 403;
+      return next(err);
     }
   }
-
 }
+
 app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));//enables us to serve data from the public folder
 
 //Handling the http requests  with the specific modules
-app.use('/', indexRouter);
-app.use('/users', usersRouter); //Ex: Requests to the endpoint /users will be handle by usersRouter express module
 app.use('/dishes', dishRouter);
 app.use('/promotions', promotionRouter);
 app.use('/leaders', leaderRouter);
