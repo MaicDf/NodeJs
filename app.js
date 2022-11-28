@@ -5,6 +5,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var session= require('express-session');
+var fileStore = require ('session-file-store')(session); 
 
 //Endpoints, Http handling requests through this Routers
 var indexRouter = require('./routes/index');
@@ -44,12 +46,19 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 // we use cooies here
-app.use(cookieParser('12345-67890-09876-54321')); //cookie signed
+//app.use(cookieParser('12345-67890-09876-54321')); //cookie signed
+app.use(session({ //setting up a session
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninitialized: false,
+  resave:false,
+  store: new fileStore()
+}));
 
 //here we should do authentication here, before the requests 
 function auth(req, res, next) { //i assume app.use always passes these 3 parameters to the functions.
-  console.log(req.signedCookies);
-  if (!req.signedCookies.user) { //si no hay cookies, pedir datos
+  console.log(req.session);
+  if (!req.session.user) { //si no hay cookies o  session, pedir datos
 
     var authHeader = req.headers.authorization;
     if (!authHeader) { //null?
@@ -75,7 +84,8 @@ function auth(req, res, next) { //i assume app.use always passes these 3 paramet
       //default user
       if (username === 'admin' && password === 'password')/* The strict equality (===) operator checks whether its two operands are equal, returning a Boolean result. Unlike the equality operator, the strict equality operator always considers operands of different types to be different. */ {
         
-        res.cookie('user','admin',{signed:true}); ///name of the cookie, value, cookie options
+        //res.cookie('user','admin',{signed:true}); ///name of the cookie, value, cookie options
+        req.session.user='admin';
         next(); //next middleware
       } else {
         var err = new Error('You are not authenticated');//Error is a NodeJS Object
@@ -85,7 +95,7 @@ function auth(req, res, next) { //i assume app.use always passes these 3 paramet
       }
     }
   }else{
-    if(req.signedCookies.user=='admin'){
+    if(req.session.user=='admin'){ //si ya hay cookies o una express session
       next();
     }else{
       var err = new Error('You are not authenticated');//Error is a NodeJS Object
