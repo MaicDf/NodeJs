@@ -7,6 +7,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var fileStore = require('session-file-store')(session);
+var passport = require('passport');
+var authenticate = require('./authenticate');
 
 //Endpoints, Http handling requests through this Routers
 var indexRouter = require('./routes/index');
@@ -47,6 +49,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 // we use cooies here
 //app.use(cookieParser('12345-67890-09876-54321')); //cookie signed
+
 app.use(session({ //setting up a session
   name: 'session-id',
   secret: '12345-67890-09876-54321',
@@ -54,6 +57,9 @@ app.use(session({ //setting up a session
   resave: false,
   store: new fileStore()
 }));
+
+app.use(passport.initialize());
+app.use(passport.session()); //serialize password and serialize user will be stored in a passport session(express sesion)
 
 //here we should do authentication here, before the requests 
 //only can access to these two before the authentication
@@ -64,20 +70,20 @@ app.use('/users', usersRouter); //Ex: Requests to the endpoint /users will be ha
 function auth(req, res, next) {
   console.log(req.session);
 
-  if (!req.session.user) {
+  if (!req.user) { //if req.user is not pressent the authentication wasnt succesful, otherwise it was successful
     var err = new Error('You are not authenticated!');
     err.status = 403;
     return next(err);
   }
   else {
-    if (req.session.user === 'authenticated') {
-      next();
-    }
-    else {
+  //  if (req.session.user === 'authenticated') {
+      next(); //with passport, we have already checked if it is authenticated
+    //}
+    /*else {
       var err = new Error('You are not authenticated!');
       err.status = 403;
       return next(err);
-    }
+    }*/
   }
 }
 
