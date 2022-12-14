@@ -7,6 +7,8 @@ const mongoose = require('mongoose');
 const Promotions = require('../models/promotions'); //importing the model
 
 const pRouter = express.Router();
+//using jwt authentication
+const authenticate = require('../authenticate');
 
 pRouter.use(bodyParser.json());
 
@@ -23,7 +25,7 @@ pRouter.route('/') //here the path put in index is extended
             .catch((err) => next(err)); //pass the error to the overall error handler.
         //end of the response
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser,(req, res, next) => {
         Promotions.create(req.body).
             then((promotion) => {
                 console.log("promotion Created ", promotion);
@@ -33,11 +35,11 @@ pRouter.route('/') //here the path put in index is extended
             }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
             .catch((err) => next(err)); //pass the error to the overall error handler.);
     })
-    .put((req, res, next) => {
+    .put(authenticate.verifyUser,(req, res, next) => {
         res.statusCode = 403;
         res.end('PUT operation not supported on /promotions');
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verifyUser,(req, res, next) => {
         Promotions.collection.drop()
             .then((resp) => {
                 res.statusCode = 200;
@@ -60,14 +62,14 @@ pRouter.route('/:promotionId') //here the path put in index is extended
             .catch((err) => next(err)); //pass the error to the overall error handler.
         //end of the response
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser,(req, res, next) => {
         res.statusCode = 403;
         res.end('post operation not supported on /promotions/:promotionId-> ' + req.params.promotionId);
     })
 
     /* Note that update(), updateMany(), findOneAndUpdate(), etc. do not execute save() middleware. If you need save middleware and full validation,
      first query for the document and then save() it. */
-    .put((req, res, next) => {
+    .put(authenticate.verifyUser,(req, res, next) => {
         Promotions.findByIdAndUpdate(req.params.promotionId, {
             $set: req.body
         }, { new: true })
@@ -78,7 +80,7 @@ pRouter.route('/:promotionId') //here the path put in index is extended
             }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
             .catch((err) => next(err)); //pass the error to the overall error handler.
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verifyUser,(req, res, next) => {
         Promotions.findByIdAndRemove(req.params.promotionId)
             .then((resp) => {
                 res.statusCode = 200;

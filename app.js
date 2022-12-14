@@ -9,6 +9,7 @@ var session = require('express-session');
 var fileStore = require('session-file-store')(session);
 var passport = require('passport');
 var authenticate = require('./authenticate');
+var config = require('./config');
 
 //Endpoints, Http handling requests through this Routers
 var indexRouter = require('./routes/index');
@@ -22,7 +23,8 @@ const mongoose = require('mongoose');
 const Dishes = require('./models/dishes'); //model exported
 const Promotions = require('./models/promotions');
 const Leaders = require('./models/leaders');
-const url = 'mongodb://localhost:27017/conFusion';
+
+const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
 connect.then(() => {
@@ -49,17 +51,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 // we use cooies here
 //app.use(cookieParser('12345-67890-09876-54321')); //cookie signed
-
+/* we are no longer using sessions.
 app.use(session({ //setting up a session
   name: 'session-id',
   secret: '12345-67890-09876-54321',
   saveUninitialized: false,
   resave: false,
   store: new fileStore()
-}));
+}));*/
 
 app.use(passport.initialize());
-app.use(passport.session()); //serialize password and serialize user will be stored in a passport session(express sesion)
+//app.use(passport.session()); //serialize password and serialize user will be stored in a passport session(express sesion)
 
 //here we should do authentication here, before the requests 
 //only can access to these two before the authentication
@@ -67,7 +69,10 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter); //Ex: Requests to the endpoint /users will be handle by usersRouter express module
 
 
-function auth(req, res, next) {
+/* function auth(req, res, next) { ->>> here we validate for each request, now, that may not be always useful, some info should be displayed
+  without needing authentication, with jwt we change that and verify auth in just some routes
+
+
   console.log(req.session);
 
   if (!req.user) { //if req.user is not pressent the authentication wasnt succesful, otherwise it was successful
@@ -79,15 +84,15 @@ function auth(req, res, next) {
   //  if (req.session.user === 'authenticated') {
       next(); //with passport, we have already checked if it is authenticated
     //}
-    /*else {
-      var err = new Error('You are not authenticated!');
-      err.status = 403;
-      return next(err);
-    }*/
+    //else {
+      //var err = new Error('You are not authenticated!');
+      //err.status = 403;
+      //return next(err);
+    }
   }
-}
+} */
 
-app.use(auth);
+//app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));//enables us to serve data from the public folder
 

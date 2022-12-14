@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 var User = require('../models/user');
 var passport = require('passport');
 const user = require('../models/user');
-
+var authenticate = require('../authenticate');
 
 var router = express.Router();
 router.use(bodyParser.json());
@@ -33,11 +33,14 @@ router.post('/signup', (req, res, next) => { //#####USER SIGN UP
 
 //we expect username and password in the body.
 //end-point login, next passport authenticate middleware, if it is succesful, next function will be executed.
-router.post('/login', passport.authenticate('local'),(req, res, next) => { //#####USER LOG IN
+router.post('/login', passport.authenticate('local',{ session: false }),(req, res, next) => { //#####USER LOG IN
 
+  //HERE WE CREATE THE TOKEN AND PASSED TO THE USER
+  var token=authenticate.getToken({_id:req.user._id}); //better keep the jwt small
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
-  res.json({ success:true, status: 'You are Succesfully logged in', user: user });
+  //pass the token to the client.
+  res.json({ success:true,token:token, status: 'You are Succesfully logged in', user: user });
 
 });
 //passport simplifies a lot.

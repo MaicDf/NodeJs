@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const Dishes = require('../models/dishes'); //importing the model
 
+//using jwt authentication
+const authenticate = require('../authenticate');
 
 //##DECLARING ROUTER
 const dishRouter = express.Router();
@@ -17,6 +19,7 @@ dishRouter.route('') //here the path put in index is extended
 
     //Just for get request, this will be executed right after app.all (modified >res<) when there is a get request.
     .get((req, res, next) => {
+        //#no auth restriction
         Dishes.find({})
             .then((dishes) => {
                 res.statusCode = 200;
@@ -27,24 +30,25 @@ dishRouter.route('') //here the path put in index is extended
         //end of the response
     })
 
-/*Model.create() method of the Mongoose API is used to create 
-single or many documents in the collection. Mongoose by 
-default triggers save() internally when we use the create() method on any model. */
-    .post((req, res, next) => {
+    /*Model.create() method of the Mongoose API is used to create 
+    single or many documents in the collection. Mongoose by 
+    default triggers save() internally when we use the create() method on any model. */
+    .post(authenticate.verifyUser,(req, res, next) => {
+        //here we verify user authenticity first
         Dishes.create(req.body).
             then((dish) => {
                 console.log("Dish Created ", dish);
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.json(dish); //send this back to the client.
-            }, (err) => {console.log("My error: ",err);next(err);}) //second parameter brings what happens when the promise is not fulfilled.
-            .catch((err) => {console.log("My error: ",err);next(err);}); //pass the error to the overall error handler.);
+            }, (err) => { console.log("My error: ", err); next(err); }) //second parameter brings what happens when the promise is not fulfilled.
+            .catch((err) => { console.log("My error: ", err); next(err); }); //pass the error to the overall error handler.);
     })
-    .put((req, res, next) => {
+    .put(authenticate.verifyUser,(req, res, next) => {
         res.statusCode = 403;
         res.end('PUT operation not supported on /dishes');
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verifyUser,(req, res, next) => {
         Dishes.collection.drop() //accesing to the collection in the model
             .then((resp) => {
                 res.statusCode = 200;
@@ -68,14 +72,14 @@ dishRouter.route('/:dishId') //here the path put in index is extended
             .catch((err) => next(err)); //pass the error to the overall error handler.
         //end of the response
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser,(req, res, next) => {
         res.statusCode = 403;
         res.end('post operation not supported on /dishes/:dishId-> ' + req.params.dishId);
     })
 
     /* Note that update(), updateMany(), findOneAndUpdate(), etc. do not execute save() middleware. If you need save middleware and full validation,
      first query for the document and then save() it. */
-    .put((req, res, next) => {
+    .put(authenticate.verifyUser,(req, res, next) => {
         Dishes.findByIdAndUpdate(req.params.dishId, {
             $set: req.body
         }, { new: true })
@@ -86,7 +90,7 @@ dishRouter.route('/:dishId') //here the path put in index is extended
             }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
             .catch((err) => next(err)); //pass the error to the overall error handler.
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verifyUser,(req, res, next) => {
         Dishes.findByIdAndRemove(req.params.dishId)
             .then((resp) => {
                 res.statusCode = 200;
@@ -124,7 +128,7 @@ dishRouter.route('/:dishId/comments') //here the path put in index is extended
             .catch((err) => next(err)); //pass the error to the overall error handler.
         //end of the response
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null) {
@@ -144,15 +148,15 @@ dishRouter.route('/:dishId/comments') //here the path put in index is extended
             }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
             .catch((err) => next(err)); //pass the error to the overall error handler
     })
-    .put((req, res, next) => {
+    .put(authenticate.verifyUser,(req, res, next) => {
         res.statusCode = 403;
         res.end('PUT operation not supported on /dishes/' + req.params.dishId + 'comments');
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verifyUser,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then(dish => {
                 if (dish != null) {
-                    for (var i = (dish.comments.length -1); i >= 0; i--) {
+                    for (var i = (dish.comments.length - 1); i >= 0; i--) {
                         dish.comments.id(dish.comments[i]._id).remove(); //accesing the sub document
                     }
                     dish.save() //needed when we do modifications in subdocuments.
@@ -171,7 +175,7 @@ dishRouter.route('/:dishId/comments') //here the path put in index is extended
             .catch((err) => {
                 console.log("Here is the error", err);
                 next(err)
-                
+
             });
     }); //all of them are chained together
 
@@ -200,14 +204,14 @@ dishRouter.route('/:dishId/comments/:commentId') //here the path put in index is
             }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
             .catch((err) => next(err)); //pass the error to the overall error handler.
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser,(req, res, next) => {
         res.statusCode = 403;
         res.end('post operation not supported on /dishes/:dishId-> ' + req.params.dishId + '/comments/' + req.params.commentId);
     })
 
-     /* Note that update(), updateMany(), findOneAndUpdate(), etc. do not execute save() middleware. If you need save middleware and full validation,
-     first query for the document and then save() it. */
-    .put((req, res, next) => {
+    /* Note that update(), updateMany(), findOneAndUpdate(), etc. do not execute save() middleware. If you need save middleware and full validation,
+    first query for the document and then save() it. */
+    .put(authenticate.verifyUser,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 //first making sure that both, dish and comment on the dish exist.
@@ -241,7 +245,7 @@ dishRouter.route('/:dishId/comments/:commentId') //here the path put in index is
             }, (err) => next(err)) //second parameter brings what happens when the promise is not fulfilled.
             .catch((err) => next(err)); //pass the error to the overall error handler.
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verifyUser,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then(dish => {
                 if (dish != null && dish.comments.id(req.params.commentId) != null) {
