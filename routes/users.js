@@ -14,7 +14,7 @@ router.get('/', function (req, res, next) {
 });
 
 router.post('/signup', (req, res, next) => { //#####USER SIGN UP
-  //instead of findOne, mongoose plugin provides us with a method called register, we don't use then but a callback
+  //instead of findOne, passport plugin provides us with a method called register, we don't use then but a callback
   User.register(new user({ username: req.body.username }), req.body.password,
     (err, user) => {
       if (err) { //any error
@@ -22,10 +22,23 @@ router.post('/signup', (req, res, next) => { //#####USER SIGN UP
         res.setHeader('Content-Type', 'application/json');
         res.json({ err: err }); //construct a json object with the error
       } else {
-        passport.authenticate('local')(req, res, () => { //syntax, authenticate again
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'application/json');
-          res.json({ success:true, status: 'Registration Succesful', user: user });
+        if (req.body.firstname)
+          user.firstname = req.body.firstname;
+        if (req.body.lastname)
+          user.lastname = req.body.lastname;
+        user.save((err, user) => {
+          if (err) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.json({ err: err }); //construct a json object with the error
+            return;
+          }
+          passport.authenticate('local')(req, res, () => { //syntax, authenticate again
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json({ success: true, status: 'Registration Succesful', user: user });
+          });
+
         });
       }
     });
@@ -33,14 +46,14 @@ router.post('/signup', (req, res, next) => { //#####USER SIGN UP
 
 //we expect username and password in the body.
 //end-point login, next passport authenticate middleware, if it is succesful, next function will be executed.
-router.post('/login', passport.authenticate('local',{ session: false }),(req, res, next) => { //#####USER LOG IN
+router.post('/login', passport.authenticate('local', { session: false }), (req, res, next) => { //#####USER LOG IN
 
   //HERE WE CREATE THE TOKEN AND PASSED TO THE USER
-  var token=authenticate.getToken({_id:req.user._id}); //better keep the jwt small
+  var token = authenticate.getToken({ _id: req.user._id }); //better keep the jwt small
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
   //pass the token to the client.
-  res.json({ success:true,token:token, status: 'You are Succesfully logged in', user: user });
+  res.json({ success: true, token: token, status: 'You are Succesfully logged in', user: user });
 
 });
 //passport simplifies a lot.

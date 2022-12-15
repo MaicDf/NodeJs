@@ -1,5 +1,5 @@
 //here is where all is managed and started
-
+//https://marketplace.visualstudio.com/items?itemName=xabikos.JavaScriptSnippets
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -17,9 +17,10 @@ var usersRouter = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var promotionRouter = require('./routes/promotionRouter');
-
 //Conecting to the data base
 const mongoose = require('mongoose');
+mongoose.set('strictQuery', false);
+
 const Dishes = require('./models/dishes'); //model exported
 const Promotions = require('./models/promotions');
 const Leaders = require('./models/leaders');

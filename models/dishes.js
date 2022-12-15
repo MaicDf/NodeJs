@@ -18,8 +18,9 @@ const commentSchema = new Schema({
         required: true
     },
     author: {
-        type: String,
-        required: true
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User'
+        //this way this is linked to the User Schema
     }
 }, { //aditional properties
     timestamps: true /* Creates the time stamps in all the documents "created at" and "updated at" */
